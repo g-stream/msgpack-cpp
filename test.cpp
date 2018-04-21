@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <map>
 int main(){
+    using namespace msgpack;
     ASSERT_EQ(0,msgpack::TYPE_PREFIX::FIX_UNINT);
     ASSERT_OK(msgpack::is_fix(0x0));
     ASSERT_OK(msgpack::is_fix(0b1000));
@@ -24,6 +25,10 @@ int main(){
     for(int i = 0xd4; i <= 0xd7; i++){
         ASSERT_OK(msgpack::is_ext(i));
     }
+    ASSERT_OK(!msgpack::BigEndian);
+    Parser p("kdjdfkjd");
+    Parser pp("kdfj");
+    auto arr = std::make_shared<std::array<int, 6>>();
+    std::cout << (*arr)[5];
     
-
 }

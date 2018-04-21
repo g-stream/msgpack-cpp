@@ -1,28 +1,33 @@
 #ifndef PARSER_H_
-#define PARSER_H_ 
+#define PARSER_H_
 #include "config.h"
 #include <cstdint>
-namespace msgpack{
-    //to define function is_ext and is_fix
-#define CHECK_PROPERTIES(name) \
-bool is_##name(uint8_t byte){                                                        \
-    if(!(byte>>7)){                                                                    \
-        return msgpack::is_##name##_map.at(msgpack::TYPE_PREFIX::FIX_UNINT);            \
-    } else if (byte >> 5 == static_cast<uint8_t>(msgpack::TYPE_PREFIX::FIX_NGINT)){  \
-        return msgpack::is_##name##_map.at(msgpack::TYPE_PREFIX::FIX_NGINT);            \
-    } else if (byte >> 4 == static_cast<uint8_t>(msgpack::TYPE_PREFIX::FIX_MAP)){    \
-        return msgpack::is_##name##_map.at(msgpack::TYPE_PREFIX::FIX_MAP);              \
-    } else if (byte >> 4 == static_cast<uint8_t>(msgpack::TYPE_PREFIX::FIX_ARRAY)){  \
-        return msgpack::is_##name##_map.at(msgpack::TYPE_PREFIX::FIX_ARRAY);            \
-    } else if (byte >> 5 == static_cast<uint8_t>(msgpack::TYPE_PREFIX::FIX_STR)){    \
-        return msgpack::is_##name##_map.at(msgpack::TYPE_PREFIX::FIX_STR);              \
-    }                                                                                \
-    return msgpack::is_##name##_map.at(static_cast<msgpack::TYPE_PREFIX>(byte));        \
-}
-CHECK_PROPERTIES(ext);
-CHECK_PROPERTIES(fix);
-#undef CHECK_PROPERTIES
-}
+#include <string>
+#include <vector>
+#include <map>
+#include <iostream>
+#include <functional>
+#include <memory>
+namespace msgpack
+{
+bool is_ext(unsigned char);
+bool is_fix(unsigned char);
+
+class Parser{
+public:
+    Parser(std::string source):source_(source){
+        if(Parser::parser_functions == nullptr){
+            init_parser_functions();
+        }
+        (*Parser::parser_functions)[0]();
+    }
+
+private:
+    static void init_parser_functions();
+    static std::shared_ptr<std::array<std::function<void()>, 256>> parser_functions;
+    std::string source_;
+};
 
 
+}//namespace msgpack
 #endif

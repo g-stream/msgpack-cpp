@@ -1,18 +1,17 @@
 cxx = g++-7
-cflag = -std=c++14 -g -Wall
+cflag = -std=c++17 -g -Wall
 
 target=test
+test:test.o parser.o
+	${cxx}  -o $@ $^ ${cflag}
 
-test:test.cpp testharness.o config.o parser.o
-	${cxx} ${cflag} -o $@ $<
+test.o:test.cpp parser.h
+	${cxx}  -c ${cflag} $^
+parser.o:parser.cpp parser.h
+	${cxx} -c ${cflag}  $<
 
-testharness.o:testharness.h
-	${cxx} ${cflag} -o $@ $<
-config.o:config.h 
-	${cxx} ${cflag} -o $@ $<
-parser.o:parser.h 
-	${cxx} ${cflag} -o $@ $<
 .PHONY:clean
 
 clean:
 	-rm test *.o
+
