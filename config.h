@@ -1,8 +1,26 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 #include <map>
+#include <cstdint>
 namespace msgpack
 {
+    union EndianTest{
+        uint16_t data;
+        uint8_t brother[2];
+    };
+    static const EndianTest endian_test{0x0001};
+    const bool BigEndian = endian_test.brother[0] == 0;
+    
+    enum class TYPE {
+        Integer,
+        Nil,
+        Boolean,
+        Float,
+        Raw,
+        Array,
+        Map,
+        Extension
+    };
 
     enum TYPE_PREFIX {
         FIX_UNINT        =  0x0,
