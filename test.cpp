@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstdio>
 #include <map>
-//#include "msgpack.h"
+#include "msgpack.h"
 struct Test{
     static void assert_ok(const char* name, bool ok, const char* file, int line){
         cnt++;
@@ -26,11 +26,14 @@ int Test::passed_cnt = 0;
 int Test::cnt = 0;
 
 #define ASSERT_OK(name, p) test.assert_ok((name), (p),__FILE__, __LINE__)
+
 int main()
 {
-  //using namespace msgpack;
+  using namespace msgpack;
   Test test;
+  
   ASSERT_OK("test", 1 == 1);
+  ASSERT_OK("mpk_nil < mpk_bin", mpk_nil < mpk_bin);
 
 
 }

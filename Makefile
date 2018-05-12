@@ -1,4 +1,4 @@
-cxx = g++-7
+cxx = clang++-7
 cflag =  -g -Wall
 
 target=test

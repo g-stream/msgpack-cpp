@@ -5,16 +5,17 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <memory>
 namespace msgpack
 {
 
 using std::map;
 using std::string;
 using std::vector;
-struct MPK_NIL
+struct MpkNil
 {
 };
-enum class mpk_type
+enum class TYPE
 {
     NIL,
     BOOL,
@@ -23,36 +24,57 @@ enum class mpk_type
     STRING,
     BIN,
     ARRAY,
-    MAP
+    MAP,
+    EXTENSION
 };
-auto mpk_nil = mpk_type::NIL;
-auto mpk_bool = mpk_type::BOOL;
-auto mpk_int = mpk_type::INT;
-auto mpk_float = mpk_type::FLOAT;
-auto mpk_string = mpk_type::STRING;
-auto mpk_bin = mpk_type::BIN;
-auto mpk_array = mpk_type::ARRAY;
-auto mpk_map = mpk_type::MAP;
+auto mpk_nil = TYPE::NIL;
+auto mpk_bool = TYPE::BOOL;
+auto mpk_int = TYPE::INT;
+auto mpk_float = TYPE::FLOAT;
+auto mpk_string = TYPE::STRING;
+auto mpk_bin = TYPE::BIN;
+auto mpk_array = TYPE::ARRAY;
+auto mpk_map = TYPE::MAP;
+auto mpk_extension = TYPE::EXTENSION;
 
-bool mpk::operator<(const mpk &rhs)
-{
-    if (type != rhs.type)
-    {
-        return type < rhs.type;
-    }
-    else
-    {
-        return get() < rhs.get();
-    }
-}
-bool operator<(const mpk &v1, const mpk &v2)
-{
-    return v1.compare(v2)
-}
+uint8_t prefix_nil = 0xc0;
+uint8_t prefix_false = 0xc2;
+uint8_t prefix_true = 0xc3;
+uint8_t prefix_bin8 = 0xc4;
+uint8_t prefix_bin16 = 0xc5;
+uint8_t prefix_bin32 = 0xc6;
+uint8_t prefix_ext8 = 0xc7;
+uint8_t prefix_ext16 = 0xc8;
+uint8_t prefix_ext32 = 0xc9;
+uint8_t prefix_float32 = 0xca;
+uint8_t prefix_float64 = 0xcb;
+uint8_t prefix_uint8 = 0xcc;
+uint8_t prefix_uint16 = 0xcd;
+uint8_t prefix_uint32 = 0xce;
+uint8_t prefix_uint64 = 0xcf;
+uint8_t prefix_int8 = 0xd0;
+uint8_t prefix_int16 = 0xd1;
+uint8_t prefix_int32 = 0xd2;
+uint8_t prefix_int64 = 0xd3;
+uint8_t prefix_fixext1 = 0xd4;
+uint8_t prefix_fixext2 = 0xd5;
+uint8_t prefix_fixext4 = 0xd6;
+uint8_t prefix_fixext8 = 0xd7;
+uint8_t prefix_fixext16 = 0xd8;
+uint8_t prefix_str8 = 0xd9;
+uint8_t prefix_str16 = 0xda;
+uint8_t prefix_str32 = 0xdb;
+uint8_t prefix_array16 = 0xdc;
+uint8_t prefix_array32 = 0xdd;
+uint8_t prefix_map16 = 0xde;
+uint8_t prefix_map32 = 0xdf;
+
+static void* enabler = nullptr;
+class MpkValue;
 class mpk
 {
-  public:
-    mpk();
+public:
+    mpk();//return a mpk_nil
     mpk(bool);
     mpk(uint8_t);
     mpk(uint16_t);
@@ -63,35 +85,24 @@ class mpk
     mpk(int32_t);
     mpk(int64_t);
     mpk(float);
-    mpk(double); //double 一定是4byte ?
+    mpk(double);
     mpk(string);
-    mpk(string, mpk_type);
+    mpk(string, msgpack::TYPE);
+    mpk(char* str, size_t n);
     mpk(vector<mpk>);
     mpk(map<string, mpk>);
-    const mpk_type type;
+    mpk(vector<mpk>::iterator, vector<mpk>::iterator);
+    const msgpack::TYPE type;
     bool operator<(const mpk &);
-
-  private:
-    union mpk_value {
-        MPK_NIL nil_v;
-        bool bool_v;
-        uint8_t uint8_v;
-        uint16_t uint16_v;
-        uint32_t uint32_v;
-        uint64_t uint64_v;
-        int8_t int8_v;
-        int16_t int16_v;
-        int32_t int32_v;
-        int64_t int64_v;
-        string string_v;
-        float float_v;
-        double double_v;
-        vector<mpk> array_v;
-        map<mpk, mpk> map_v;
-    };
-    mpk_value value_;
+private:
+    std::shared_ptr<MpkValue> m_ptr;
 };
 
-bool operator<(mpk, mpk);
+class MpkValue{
+    virtual ;
+}
+
+
+
 }
 #endif

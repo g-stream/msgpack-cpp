@@ -3,3 +3,4 @@
 .vscode/
 msgpack-cpp.kdev4
 test
+*.o
