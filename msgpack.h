@@ -9,6 +9,16 @@
 namespace msgpack
 {
 
+namespace {
+    union endian_check_t{
+        uint16_t data;
+        uint8_t check[2];
+    }
+    const endian_check_t endian_check_data{0xffef};
+    const IsBigEndian = endian_check_data.check[0] == 0xff;
+    const IsLittleEndian = !IsBigEndian;
+}
+    
 using std::map;
 using std::string;
 using std::vector;
@@ -99,7 +109,20 @@ private:
 };
 
 class MpkValue{
-    virtual ;
+public:
+    virtual void encode(vector<uint8_t>&) = 0;
+    virtual msgpack::TYPE type() = 0;
+    virtual less(const MpkValue&) = 0;
+    virtual equal(const MpkValue&) = 0;
+    
+}
+
+template<MsgType type_tag, typename T>
+class Value:public MpkValue{
+public:
+    
+private:
+    T m_value;
 }
 
 
