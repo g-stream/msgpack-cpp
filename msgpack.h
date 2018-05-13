@@ -3,6 +3,7 @@
 #define MSGPACK_H_
 #include <string>
 #include <vector>
+#include <iostream>
 #include <map>
 #include <limits>
 #include <cstdint>
@@ -29,6 +30,12 @@ using std::vector;
 using std::is_same;
 struct MpkNil
 {
+    bool operator<(const MpkNil& other){
+        return false;
+    }
+    bool operator==(const MpkNil& other){
+        return true;
+    }
 };
 enum class TYPE
 {
@@ -42,15 +49,15 @@ enum class TYPE
     MAP,
     EXTENSION
 };
-auto mpk_nil = TYPE::NIL;
-auto mpk_bool = TYPE::BOOL;
-auto mpk_int = TYPE::INT;
-auto mpk_float = TYPE::FLOAT;
-auto mpk_string = TYPE::STRING;
-auto mpk_bin = TYPE::BIN;
-auto mpk_array = TYPE::ARRAY;
-auto mpk_map = TYPE::MAP;
-auto mpk_extension = TYPE::EXTENSION;
+static const auto mpk_nil = TYPE::NIL;
+static const auto mpk_bool = TYPE::BOOL;
+static const auto mpk_int = TYPE::INT;
+static const auto mpk_float = TYPE::FLOAT;
+static const auto mpk_string = TYPE::STRING;
+static const auto mpk_bin = TYPE::BIN;
+static const auto mpk_array = TYPE::ARRAY;
+static const auto mpk_map = TYPE::MAP;
+static const auto mpk_extension = TYPE::EXTENSION;
 
 static const uint8_t prefix_nil = 0xc0;
 static const uint8_t prefix_false = 0xc2;
@@ -115,65 +122,71 @@ private:
 
 class MpkValue {
 public:
-    virtual void encode(vector<uint8_t>&);
+   // virtual void encode(vector<uint8_t>&);
     virtual msgpack::TYPE type() const = 0;
-    virtual bool operator<(const MpkValue&) const = 0;
-    virtual bool operator==(const MpkValue&) const = 0;
-    bool operator>(const MpkValue& other) const {
+  //  virtual bool operator<(const MpkValue&) const = 0;
+ //   virtual bool operator==(const MpkValue&) const = 0;
+    virtual decltype(typeid(int)) specific_type() const = 0;
+  /*  bool operator>(const MpkValue& other) const {
         return other < *this;
     }
     bool operator<=(const MpkValue& other) const {
-        return ! (other<*this);
+        return ! (other < *this);
     }
     bool operator>=(const MpkValue& other) const {
         return !(*this < other);
     }
     bool operator!=(const MpkValue& other) const {
         return !(*this == other);
-    }
+    } */
 };
 
 template<msgpack::TYPE type_tag, typename T>
 class Value:public MpkValue {
 public:
-    explicit Value(const T& v):m_value(v){}
-    msgpack::TYPE type() const {
+    explicit Value(const T& v):m_value(v) {}
+    msgpack::TYPE type() const override {
         return type_tag;
     }
-    bool operator<(const MpkValue& other) const override{
-        if(type() != other.type())
-            return type() < other.type();
-        return m_value < other.m_value;
+    decltype(typeid(int)) specific_type() const override {
+        return typeid(m_value);
     }
-    
+
 private:
-    T m_value;
+    const T m_value;
 };
-mpk_bool_t:public Value<mpk_bool, bool>{
-}
-mpk_nil_t:public Value<mpk_nil, MpkNil>{}
+class mpk_bool_t:public Value<mpk_bool, bool> {
+public:
+    mpk_bool_t(bool v):Value<mpk_bool, bool>(v){}
+};
+class mpk_nil_t:public Value<mpk_nil, MpkNil> {
+public:
+    mpk_nil_t():Value<mpk_nil, MpkNil>(MpkNil{}){};
+};
 
-mpk_int8_t:public Value<mpk_int, int8_t>{
-    
-}
-mpk_int16_t:public Value<mpk_int, int16_t>{}
-mpk_int32_t:public Value<mpk_int, int32_t>{}
-mpk_int64_t:public Value<mpk_int, int64_t>{}
-mpk_uint8_t:public Value<mpk_int, uint8_t>{}
-mpk_uint16_t:public Value<mpk_int, uint16_t>{}
-mpk_uint32_t:public Value<mpk_int, uint32_t>{}
-mpk_uint64_t:public Value<mpk_int, uint64_t>{}
+class mpk_int8_t:public Value<mpk_int, int8_t> {
+public:
+    mpk_int8_t(int8_t v):Value<mpk_int, int8_t>(v){}
+};
+class mpk_int16_t:public Value<mpk_int, int16_t> {
+public:
+    mpk_int16_t(int16_t v):Value<mpk_int, int16_t>(v){}
+};
+class mpk_int32_t:public Value<mpk_int, int32_t> {};
+class mpk_int64_t:public Value<mpk_int, int64_t> {};
+class mpk_uint8_t:public Value<mpk_int, uint8_t> {};
+class mpk_uint16_t:public Value<mpk_int, uint16_t> {};
+class mpk_uint32_t:public Value<mpk_int, uint32_t> {};
+class mpk_uint64_t:public Value<mpk_int, uint64_t> {};
 
+class mpk_float32_t:public Value<mpk_float, float> {};
+class mpk_float64_t:public Value<mpk_float, double> {};
 
-mpk_float32_t:public Value<mpk_float, float>{}
-mpk_float64_t:public Value<mpk_float, double>{}
+class mpk_bin_t:public Value<mpk_bin, vector<uint8_t>> {};
+class mpk_string_t:public Value<mpk_string, string> {};
 
-mpk_bin_t:public Value<mpk_bin, vector<uint8_t>>{}
-mpk_string_t:public Value<mpk_string, string>>{}
-
-
-mpk_array_t:public Value<mpk_array, vector<mpk>>{}
-mpk_map_t:public Value<mpk_map, map<mpk, mpk>>{}
+class mpk_array_t:public Value<mpk_array, vector<mpk>> {};
+class mpk_map_t:public Value<mpk_map, map<mpk, mpk>> {};
 
 namespace {
 
@@ -189,11 +202,11 @@ public:
     }
     void operator()(vector<uint8_t>& out) {
         if(IsBigEndian) {
-            for(int i = 0; i < sizeof(T); i++) {
+            for(size_t i = 0; i < sizeof(T); i++) {
                 out.push_back(d_.data_to_encode[i]);
             }
         } else {
-            for(int i = 0; i < sizeof(T); i++) {
+            for(size_t i = 0; i < sizeof(T); i++) {
                 out.push_back(d_.data_to_encode[sizeof(T) -1 -i]);
             }
         }
@@ -241,7 +254,6 @@ void encode(int32_t value, vector<uint8_t>& out) {
     }
 }
 void encode(int64_t value, vector<uint8_t>& out) {
-    std::cout << "int int64_t encode " << value << std::endl;
     if(value <= std::numeric_limits<int32_t>::max() && value >= std::numeric_limits<int32_t>::min())
         encode(static_cast<int32_t>(value), out);
     else {
@@ -294,42 +306,42 @@ void encode(double value, vector<uint8_t>& out) {
     encoder(out);
 }
 
-void encode(const string& value, vector<uint8_t>& out){
+void encode(const std::string& value, vector<uint8_t>& out) {
     using namespace std;;
-    if(value.size()<32){
+    if(value.size()<32) {
         out.push_back((((1<<8)-1) & value.size()) | 0xA0);
-        
-    } else if( value.size() <= numeric_limits<uint8_t>::max()){
+
+    } else if( value.size() <= std::numeric_limits<uint8_t>::max()) {
         out.push_back(prefix_str8);
         encode_value<uint8_t> encoder(value.size());
         encoder(out);
-    } else if( value.size() <= numeric_limits<uint16_t>::max()){
+    } else if( value.size() <= std::numeric_limits<uint16_t>::max()) {
         out.push_back(prefix_str16);
         encode_value<uint16_t> encoder(value.size());
         encoder(out);
-    } else if (value.size() <= numeric_limits<uint32_t>::max()){
+    } else if (value.size() <= std::numeric_limits<uint32_t>::max()) {
         out.push_back(prefix_str32);
         encode_value<uint32_t> encoder(value.size());
         encoder(out);
-    } else 
+    } else
         throw "carsh because a str has size large than 2^32";
     copy(value.begin(), value.end(), back_inserter(out));
 }
-void encode(const vector<uint8_t>& value, vector<uint8_t>& out){
+void encode(const vector<uint8_t>& value, vector<uint8_t>& out) {
     using namespace std;;
-    if( value.size() <= numeric_limits<uint8_t>::max()){
+    if( value.size() <= std::numeric_limits<uint8_t>::max()) {
         out.push_back(prefix_bin8);
         encode_value<uint8_t> encoder(value.size());
         encoder(out);
-    } else if( value.size() <= numeric_limits<uint16_t>::max()){
+    } else if( value.size() <= std::numeric_limits<uint16_t>::max()) {
         out.push_back(prefix_bin16);
         encode_value<uint16_t> encoder(value.size());
         encoder(out);
-    } else if (value.size() <= numeric_limits<uint32_t>::max()){
+    } else if (value.size() <= std::numeric_limits<uint32_t>::max()) {
         out.push_back(prefix_bin32);
         encode_value<uint32_t> encoder(value.size());
         encoder(out);
-    } else 
+    } else
         throw "carsh because a bin has size large than 2^32";
     copy(value.begin(), value.end(), back_inserter(out));
 }

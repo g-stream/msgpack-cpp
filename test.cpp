@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdio>
+#include <vector>
 #include <map>
 #include "msgpack.h"
 struct Test {
@@ -28,7 +29,7 @@ int Test::cnt = 0;
 #define ASSERT_OK(name, p) test.assert_ok((name), (p),__FILE__, __LINE__)
 
 using namespace std;
-void print_str(string str, vector<uint8_t> &v) {
+void print_str(string str, std::vector<uint8_t> &v) {
     cout << str << endl;
     for(auto i: v)
         printf("%02x ",i);
@@ -43,8 +44,8 @@ int main()
     Test test;
 
     ASSERT_OK("test", 1 == 1);
-    ASSERT_OK("mpk_nil < mpk_bin", mpk_nil < mpk_bin);
-    
-    mpk_bool_t(true);
+    msgpack::mpk_bool_t v(true);
+    mpk_int8_t mpk_int8_v(23);
+    mpk_int16_t mpk_int16_v(4903);
     
 }
