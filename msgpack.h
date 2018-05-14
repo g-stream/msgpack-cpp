@@ -126,6 +126,7 @@ public:
     mpk(float);
     mpk(double);
     mpk(const string&);
+    mpk(const char*);
     mpk(const vector<uint8_t>&);
     mpk(char* str, size_t n);
     mpk(const vector<mpk>&);
@@ -224,8 +225,10 @@ void encode(int64_t value, vector<uint8_t>& out) {
 void encode(uint8_t value, vector<uint8_t>& out) {
     if(((1u<<7)&value)==0)
         out.push_back(value);
-    else
+    else{
+        out.push_back(prefix_uint8);
         out.push_back(*reinterpret_cast<uint8_t*>(&value));
+    }
 }
 void encode(uint16_t value, vector<uint8_t>& out) {
     if(value <= std::numeric_limits<uint8_t>::max())
@@ -269,7 +272,7 @@ void encode(double value, vector<uint8_t>& out) {
 
 void encode(const std::string& value, vector<uint8_t>& out) {
     if(value.length()<32) {
-        out.push_back((((1<<8)-1) & value.length()) | 0xA0);
+        out.push_back((((1<<5)-1) & value.length()) | 0xA0);
     } else if( value.size() <= std::numeric_limits<uint8_t>::max()) {
         out.push_back(prefix_str8);
         encode_value<uint8_t> encoder(value.size());
@@ -456,6 +459,7 @@ msgpack::mpk::mpk(float v):m_ptr(make_shared<mpk_float32_t>(v)){}
 msgpack::mpk::mpk(double v):m_ptr(make_shared<mpk_float64_t>(v)){}
 
 msgpack::mpk::mpk(const string& v):m_ptr(make_shared<mpk_string_t>(v)){}
+msgpack::mpk::mpk(const char* v):mpk(string(v)){};
 msgpack::mpk::mpk(const vector<uint8_t>& v):m_ptr(make_shared<mpk_bin_t>(v)){}
 
 msgpack::mpk::mpk(const vector<mpk>& v):m_ptr(make_shared<mpk_array_t>(v)){}

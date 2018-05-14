@@ -49,28 +49,12 @@ int main()
     msgpack::mpk_bool_t vfalse(false);
     ASSERT_OK("mpkvalue compare", vfalse < vtrue);
     ASSERT_OK("compare int", mpk(8) < mpk(16));
-    ASSERT_OK("compare different type", mpk() < mpk(0.1));
-    auto a = mpk(0xffffffffff);
+    ASSERT_OK("compare different type", mpk() < mpk(0.1));    
     vector<uint8_t> v;
-    auto b = mpk(string("00000000000000000"));
-    auto c = mpk(vector<mpk>{a,b});
-    auto d = mpk(map<mpk,mpk>{{a,b}});
-    
-    c.encode(v);
-    for(auto i: v)
+    auto str = mpk("kdfj00000");
+    str.encode(v);
+    for(auto i: v){
         printf("%02x ", i);
-    v.clear();
-    d.encode(v);
+    }
     cout << endl;
-    for(auto i: v)
-        printf("%02x ", i);
-    
-    auto dd = mpk(map<mpk,mpk>{{d,d},{a,c}});
-    v.clear();
-    dd.encode(v);
-    cout << endl;
-    for(auto i: v)
-        printf("%02x ", i);
-    
-    
 }
