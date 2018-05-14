@@ -1,5 +1,5 @@
-cxx = clang
-cflag =  -g -Wall -std=c++14
+cxx = clang++-7
+cflag =  -g -Wall -std=c++17
 
 target=test
 

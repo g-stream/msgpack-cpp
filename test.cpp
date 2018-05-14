@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdio>
 #include <vector>
+
 #include <map>
 #include "msgpack.h"
 struct Test {
@@ -44,8 +45,32 @@ int main()
     Test test;
 
     ASSERT_OK("test", 1 == 1);
-    msgpack::mpk_bool_t v(true);
-    mpk_int8_t mpk_int8_v(23);
-    mpk_int16_t mpk_int16_v(4903);
+    msgpack::mpk_bool_t vtrue(true);
+    msgpack::mpk_bool_t vfalse(false);
+    ASSERT_OK("mpkvalue compare", vfalse < vtrue);
+    ASSERT_OK("compare int", mpk(8) < mpk(16));
+    ASSERT_OK("compare different type", mpk() < mpk(0.1));
+    auto a = mpk(0xffffffffff);
+    vector<uint8_t> v;
+    auto b = mpk(string("00000000000000000"));
+    auto c = mpk(vector<mpk>{a,b});
+    auto d = mpk(map<mpk,mpk>{{a,b}});
+    
+    c.encode(v);
+    for(auto i: v)
+        printf("%02x ", i);
+    v.clear();
+    d.encode(v);
+    cout << endl;
+    for(auto i: v)
+        printf("%02x ", i);
+    
+    auto dd = mpk(map<mpk,mpk>{{d,d},{a,c}});
+    v.clear();
+    dd.encode(v);
+    cout << endl;
+    for(auto i: v)
+        printf("%02x ", i);
+    
     
 }

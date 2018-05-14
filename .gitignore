@@ -4,3 +4,4 @@
 msgpack-cpp.kdev4
 test
 *.o
+*.kate-swp
