@@ -45,11 +45,11 @@ void print_str(string str, std::vector<uint8_t> &v) {
 bool test_encode_and_decode(mpk& value) {
     byte_stream bin;
     value.encode(bin);
-    print_str("one", bin);
+    //print_str("one", bin);
     auto tmp = decode(bin);
     byte_stream bin2;
     tmp.encode(bin2);
-    print_str("two", bin2);
+    //print_str("two", bin2);
     return bin == bin2;
 }
 int main()
@@ -63,7 +63,7 @@ int main()
     ASSERT_OK("compare int", mpk(8) < mpk(16));
     ASSERT_OK("compare different type", mpk() < mpk(0.1));
 
-    auto test_mpk_string_v = mpk("djflk");
+    auto test_mpk_string_v = mpk("aaaa");
     auto test_mpk_uint8_max_v = mpk(numeric_limits<uint8_t>::max());
     auto test_mpk_uint16_max_v = mpk(numeric_limits<uint16_t>::max());
     auto test_mpk_uint32_max_v = mpk(numeric_limits<uint32_t>::max());
@@ -83,7 +83,7 @@ int main()
     ASSERT_OK("max_min_array", test_encode_and_decode(max_min_array));
     
     ASSERT_OK("fixstr", test_encode_and_decode(test_mpk_string_v));
-    string str8 = string("lkasdjfklajsdfkljasdlkfjasodifhwehfsdflkjaskldjflaksjdflkajsdlkfjlksjfnasovnuiehrfkjashjkhjdsffffffffffffffffffffffaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalsdjfnaviuhrv");
+    string str8 = string("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
     string str16;
     for(int i = 0; i < 0xffff; i++){
         str16.push_back('x');
@@ -128,8 +128,12 @@ int main()
     auto test_mix_array_v = mpk(vector<mpk>{test_mpk_string_v, test_string8_v, test_string16_v, test_string32_v, test_mpk_int16_max_v, max_min_array, test_false_v, test_true_v, test_nil_v, test_bin16_v, test_bin32_v, test_bin8_v});
     ASSERT_OK("test mix array", test_encode_and_decode(test_mix_array_v));
     
-    auto test_mix_map_v = mpk(map<mpk,mpk>{{test_mpk_string_v,test_string8_v}, {test_string16_v, test_string32_v}, {test_mpk_int16_max_v, max_min_array}, {test_false_v, test_true_v}, {test_nil_v, test_bin16_v}, {test_bin32_v, test_mix_array_v}});
-    ASSERT_OK("test mix map", test_encode_and_decode(test_mix_map_v));
-
-
+    auto test_mix_map_v = mpk(map<mpk,mpk>{{test_mpk_string_v,test_string8_v}, {test_false_v, test_true_v}, {test_string16_v, test_string32_v}, {test_mpk_int16_max_v, max_min_array}, {test_nil_v, test_bin16_v}, {test_bin32_v, test_mix_array_v}});
+   // ASSERT_OK("test mix map", test_encode_and_decode(test_mix_map_v));
+    
+    auto test_int_to_int_map_v = mpk(map<mpk,mpk>{{test_mpk_int16_max_v, test_mpk_int16_min_v}, {test_mpk_int32_max_v, test_mpk_int32_min_v}});
+    ASSERT_OK("test int to int map", test_encode_and_decode(test_int_to_int_map_v));
+    auto test_int_to_int_string_to_string_map_v = mpk(map<mpk,mpk>{{test_mpk_int16_max_v, test_mpk_int16_min_v}, {test_mpk_int32_max_v, test_mpk_int32_min_v}, {test_string16_v, test_string32_v}});
+    ASSERT_OK("test int to int map add string to string map", test_encode_and_decode(test_int_to_int_string_to_string_map_v));
+    
 }
