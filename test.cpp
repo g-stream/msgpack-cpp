@@ -50,11 +50,8 @@ int main()
     ASSERT_OK("mpkvalue compare", vfalse < vtrue);
     ASSERT_OK("compare int", mpk(8) < mpk(16));
     ASSERT_OK("compare different type", mpk() < mpk(0.1));    
-    vector<uint8_t> v;
-    auto str = mpk("kdfj00000");
-    str.encode(v);
-    for(auto i: v){
-        printf("%02x ", i);
-    }
-    cout << endl;
+    
+    vector<uint8_t> v{0xff,0xff,0x00,0x00};
+    decode_value decoder(v,0,4);
+    cout << decoder();
 }
