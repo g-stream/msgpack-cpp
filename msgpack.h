@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <algorithm>
 #include <type_traits>
 namespace msgpack
 {
@@ -490,6 +491,8 @@ void msgpack::mpk::encode(vector<uint8_t>& v) const {
 
 //parser
 
+mpk decode_core(vector<uint8_t>& in, size_t& cur);
+
 template<typename T>
 class decode_value{
 public:
@@ -497,10 +500,9 @@ public:
         T data;
         uint8_t data_array[sizeof(T)];
     };
-    decode_value(vector<uint8_t>& in, size_t cur, size_t n){
-        assert(n == sizeof(T));
-        assert(cur+n < in.size());
-        for(size_t i = 0; i < n; i++){
+    decode_value(vector<uint8_t>& in, size_t cur){
+        assert(cur + sizeof(T) <= in.size());
+        for(size_t i = 0; i < sizeof(T); i++){
             d_.data_array[i] = in[cur+i];
         }
     }
@@ -508,7 +510,7 @@ public:
         if(IsBigEndian)
             return d_.data;
         else{
-            reverse(d_.data_array, d_.data_array + sizeof(T) -1);
+            std::reverse(d_.data_array, d_.data_array + sizeof(T));
             return d_.data;
         }
     }
@@ -521,22 +523,22 @@ private:
 
 
 
-mpk decode_nil(vector<uint8_t>& in, size_t cur){
+mpk decode_nil(vector<uint8_t>& in, size_t& cur){
     assert(cur < in.size());
     cur++;
     return mpk();
 }
-mpk decode_false(vector<uint8_t>& in, size_t cur){
+mpk decode_false(vector<uint8_t>& in, size_t& cur){
     assert(cur < in.size());
     cur++;
     return mpk(false);
 }
-mpk decode_true(vector<uint8_t>& in, size_t cur){
+mpk decode_true(vector<uint8_t>& in, size_t& cur){
     assert(cur < in.size());
     cur++;
     return mpk(true);
 }
-mpk decode_bin_n(vector<uint8_t>& in, size_t cur, size_t n){
+mpk decode_bin_n(vector<uint8_t>& in, size_t& cur, size_t n){
     assert(cur + n <= in.size());
     vector<uint8_t> tmp;
     for(size_t i = 0; i < n; i++){
@@ -544,9 +546,9 @@ mpk decode_bin_n(vector<uint8_t>& in, size_t cur, size_t n){
     }
     return mpk(tmp);
 }
-mpk decode_bin8(vector<uint8_t>& in, size_t cur){
+mpk decode_bin8(vector<uint8_t>& in, size_t& cur){
     cur++;
-    decode_value<uint8_t> decoder(in, cur, 1);
+    decode_value<uint8_t> decoder(in, cur);
     size_t len = decoder();
     cur++;
     size_t curr = cur;
@@ -554,95 +556,95 @@ mpk decode_bin8(vector<uint8_t>& in, size_t cur){
     return decode_bin_n(in, curr, len);
 }
 
-mpk decode_bin16(vector<uint8_t>& in, size_t cur){
+mpk decode_bin16(vector<uint8_t>& in, size_t& cur){
     cur++;
-    decode_value<uint16_t> decoder(in, cur, 2);
+    decode_value<uint16_t> decoder(in, cur);
     size_t len = decoder();
     cur += 2;
     size_t curr = cur;
     cur += len;
     return decode_bin_n(in, curr, len);
 }
-mpk decode_bin32(vector<uint8_t>& in, size_t cur){
+mpk decode_bin32(vector<uint8_t>& in, size_t& cur){
     cur++;
-    decode_value<uint32_t> decoder(in, cur, 4);
+    decode_value<uint32_t> decoder(in, cur);
     size_t len = decoder();
     cur += 4;
     size_t curr = cur;
     cur += len;
     return decode_bin_n(in, curr, len);
 }
-mpk decode_float32(vector<uint8_t>& in, size_t cur){
+mpk decode_float32(vector<uint8_t>& in, size_t& cur){
     assert(cur + 5 <= in.size());
     cur++;
-    decode_value<float> decoder(in, cur, 4);
+    decode_value<float> decoder(in, cur);
     cur += 4;
     return mpk(decoder());
 }
-mpk decode_float64(vector<uint8_t>& in, size_t cur){
+mpk decode_float64(vector<uint8_t>& in, size_t& cur){
     assert(cur + 9 <= in.size());
     cur++;
-    decode_value<double> decoder(in, cur, 8);
+    decode_value<double> decoder(in, cur);
     cur += 8;
     return mpk(decoder());
 }
-mpk decode_uint8(vector<uint8_t>& in, size_t cur){
+mpk decode_uint8(vector<uint8_t>& in, size_t& cur){
     assert(cur + 2 <= in.size());
     cur++;
-    decode_value<uint8_t> decoder(in, cur, 1);
+    decode_value<uint8_t> decoder(in, cur);
     cur++;
     return mpk(decoder());
 }
-mpk decode_uint16(vector<uint8_t>& in, size_t cur){
+mpk decode_uint16(vector<uint8_t>& in, size_t& cur){
     assert(cur + 3 <= in.size());
     cur++;
-    decode_value<uint16_t> decoder(in, cur, 2);
+    decode_value<uint16_t> decoder(in, cur);
     cur += 2;
     return mpk(decoder());
 }
-mpk decode_uint32(vector<uint8_t>& in, size_t cur){
+mpk decode_uint32(vector<uint8_t>& in, size_t& cur){
     assert(cur + 5 <= in.size());
     cur++;
-    decode_value<uint32_t> decoder(in, cur, 4);
+    decode_value<uint32_t> decoder(in, cur);
     cur += 4;
     return mpk(decoder());
 }
-mpk decode_uint64(vector<uint8_t>& in, size_t cur){
+mpk decode_uint64(vector<uint8_t>& in, size_t& cur){
     assert(cur + 9 <= in.size());
     cur++;
-    decode_value<uint64_t> decoder(in, cur, 8);
+    decode_value<uint64_t> decoder(in, cur);
     cur += 8;
     return mpk(decoder());
 }
-mpk decode_int8(vector<uint8_t>& in, size_t cur){
+mpk decode_int8(vector<uint8_t>& in, size_t& cur){
     assert(cur + 2 <= in.size());
     cur++;
-    decode_value<int8_t> decoder(in, cur, 1);
+    decode_value<int8_t> decoder(in, cur);
     cur++;
     return mpk(decoder());
 }
-mpk decode_int16(vector<uint8_t>& in, size_t cur){
+mpk decode_int16(vector<uint8_t>& in, size_t& cur){
     assert(cur + 3 <= in.size());
     cur++;
-    decode_value<int16_t> decoder(in, cur, 2);
+    decode_value<int16_t> decoder(in, cur);
     cur += 2;
     return mpk(decoder());
 }
-mpk decode_int32(vector<uint8_t>& in, size_t cur){
+mpk decode_int32(vector<uint8_t>& in, size_t& cur){
     assert(cur + 5 <= in.size());
     cur++;
-    decode_value<int32_t> decoder(in, cur, 4);
+    decode_value<int32_t> decoder(in, cur);
     cur += 4;
     return mpk(decoder());
 }
-mpk decode_int64(vector<uint8_t>& in, size_t cur){
+mpk decode_int64(vector<uint8_t>& in, size_t& cur){
     assert(cur + 9 <= in.size());
     cur++;
-    decode_value<int64_t> decoder(in, cur, 8);
+    decode_value<int64_t> decoder(in, cur);
     cur += 8;
     return mpk(decoder());
 }
-mpk decode_str_n(vector<uint8_t>& in, size_t cur, size_t n){
+mpk decode_str_n(vector<uint8_t>& in, size_t& cur, size_t n){
     assert(cur + n <= in.size());
     string tmp;
     for(size_t i = 0; i < n; i++){
@@ -650,63 +652,132 @@ mpk decode_str_n(vector<uint8_t>& in, size_t cur, size_t n){
     }
     return mpk(tmp);
 }
-mpk decode_str8(vector<uint8_t>& in, size_t cur){
+mpk decode_str8(vector<uint8_t>& in, size_t& cur){
     cur++;
-    decode_value<uint8_t> decoder(in, cur, 1);
+    decode_value<uint8_t> decoder(in, cur);
     size_t len = decoder();
     cur++;
     size_t curr = cur;
     cur += len;
     return decode_str_n(in, curr, len);
 }
-mpk decode_str16(vector<uint8_t>& in, size_t cur){
+mpk decode_str16(vector<uint8_t>& in, size_t& cur){
     cur++;
-    decode_value<uint16_t> decoder(in, cur, 2);
+    decode_value<uint16_t> decoder(in, cur);
     size_t len = decoder();
     cur += 2;
     size_t curr = cur;
     cur += len;
     return decode_str_n(in, curr, len);
 }
-mpk decode_str32(vector<uint8_t>& in, size_t cur){
+mpk decode_str32(vector<uint8_t>& in, size_t& cur){
     cur++;
-    decode_value<uint32_t> decoder(in, cur, 4);
+    decode_value<uint32_t> decoder(in, cur);
     size_t len = decoder();
     cur += 4;
     size_t curr = cur;
     cur += len;
     return decode_str_n(in, curr, len);   
 }
+mpk decode_fixstr(vector<uint8_t>& in, size_t& cur){
+    size_t len = (0x1f & in[cur]);
+    cur++;
+    size_t curr = cur;
+    cur += len;
+    return decode_str_n(in, curr, len);   
+}
+
 
 //////////////
-mpk decode_array_n(vector<uint8_t>& in, size_t cur, size_t n){
-    string tmp;
+mpk decode_array_n(vector<uint8_t>& in, size_t& cur, size_t n){
+    vector<mpk> tmp;
     for(size_t i = 0; i < n; i++){
-        tmp.push_back(in[cur+i]);
+        tmp.push_back(decode_core(in, cur));
     }
-    return mpk(tmp);
+    return tmp;
 }
-mpk decode_array16(vector<uint8_t>& in, size_t cur){
-    
+mpk decode_array16(vector<uint8_t>& in, size_t& cur){
+    cur++;
+    decode_value<uint8_t> decoder(in, cur);
+    size_t num = decoder();
+    cur += 2;
+    return decode_array_n(in, cur, num);
 }
-mpk decode_array32(vector<uint8_t>& in, size_t cur){
-    
+mpk decode_array32(vector<uint8_t>& in, size_t& cur){
+    cur++;
+    decode_value<uint32_t> decoder(in, cur);
+    size_t num = decoder();
+    cur += 4;
+    return decode_array_n(in, cur, num);
 }
-mpk decode_map16(vector<uint8_t>& in, size_t cur){
-    
+mpk decode_fixarray(vector<uint8_t>& in, size_t& cur){
+    size_t num = (0x0f&in[cur]);
+    cur++;
+    return decode_array_n(in, cur, num);
 }
-mpk decode_map32(vector<uint8_t>& in, size_t cur){
-    
+
+mpk decode_map_n(vector<uint8_t>& in, size_t& cur, size_t n){
+    map<mpk, mpk> tmp;
+    for(size_t i = 0; i < n; i++){
+        auto key = decode_core(in, cur);
+        auto value = decode_core(in, cur);
+        tmp[key] = value;
+    }
+    return tmp;
+}
+
+mpk decode_map16(vector<uint8_t>& in, size_t& cur){
+    cur++;
+    decode_value<uint16_t> decoder(in, cur);
+    size_t num = decoder();
+    cur += 2;
+    return decode_map_n(in, cur, num);
+}
+mpk decode_map32(vector<uint8_t>& in, size_t& cur){
+    cur++;
+    decode_value<uint32_t> decoder(in, cur);
+    size_t num = decoder();
+    cur += 4;
+    return decode_map_n(in, cur, num);
+}
+mpk decode_fixmap(vector<uint8_t>& in, size_t& cur){
+    size_t num = (0x0f&in[cur]);
+    cur++;
+    return decode_map_n(in, cur, num);
 }
 
 
-typedef mpk decode_function_type(vector<uint8_t>&, size_t);
+
+
+typedef mpk (*decode_function_type)(vector<uint8_t>&, size_t&);
 decode_function_type decode_functions[256] = {
-    
+    [prefix_nil]      =  decode_nil,
+    [prefix_false]    =  decode_false,
+    [prefix_true]     =  decode_true,
+    [prefix_bin8]     =  decode_bin8,
+    [prefix_bin16]    =  decode_bin16,
+    [prefix_bin32]    =  decode_bin32,
+    [prefix_float32]  =  decode_float32,
+    [prefix_float64]  =  decode_float64,
+    [prefix_uint8]    =  decode_uint8,
+    [prefix_uint16]   =  decode_uint16,
+    [prefix_uint32]   =  decode_uint32,
+    [prefix_uint64]   =  decode_uint64,
+    [prefix_int8]     =  decode_int8,
+    [prefix_int16]    =  decode_int16,
+    [prefix_int32]    =  decode_int32,
+    [prefix_int64]    =  decode_int64,
+    [prefix_str8]     =  decode_str8,
+    [prefix_str16]    =  decode_str16,
+    [prefix_str32]    =  decode_str32,
+    [prefix_array16]  =  decode_array16,
+    [prefix_array32]  =  decode_array32,
+    [prefix_map16]    =  decode_map16,
+    [prefix_map32]    =  decode_map32
 };
 
 //LL(1) parser
-mpk decode_core(vector<uint8_t>& in, size_t cur){
+mpk decode_core(vector<uint8_t>& in, size_t& cur){
     assert(cur < in.size());
     if((1<<7 & in[cur]) == 0){//positive little int
         return mpk(static_cast<int8_t>(in[cur++]));
@@ -720,6 +791,13 @@ mpk decode_core(vector<uint8_t>& in, size_t cur){
         return decode_fixstr(in, cur);
     }else 
         return decode_functions[in[cur]](in, cur);
+}
+
+mpk decode(vector<uint8_t>& in){
+    size_t index = 0;
+    auto tmp = decode_core(in, index);
+    //assert(index == in.size());
+    return tmp;
 }
 
 }
